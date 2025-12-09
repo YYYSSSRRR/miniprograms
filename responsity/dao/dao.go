@@ -1,23 +1,28 @@
 package dao
 
 import (
+	"MiniPrograms/responsity/conf"
 	"MiniPrograms/responsity/model"
-	"gorm.io/driver/sqlite"
+	"fmt"
+
+	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
 
 type MiniProgramsDAO struct {
-	db *gorm.DB
+	db    *gorm.DB
+	table string
 }
 
 // 初始化 SQLite 数据库连接
-func InitDB() (*gorm.DB, error) {
-	// 使用 SQLite 连接数据库，这里可以指定 SQLite 数据库文件的路径
-	db, err := gorm.Open(sqlite.Open("./db/mini_programs.db"), &gorm.Config{})
+func InitDB(conf *conf.Config) (*gorm.DB, error) {
+	// 连接数据库
+	db, err := gorm.Open(mysql.New(mysql.Config{DSN: conf.Data.Dsn}), &gorm.Config{})
 	if err != nil {
-		panic("failed to connect database")
+		return nil, fmt.Errorf("failed to connect database111: %w", err)
 	}
-	err = db.AutoMigrate(&model.MiniPrograms{})
+	err = db.Table("miniprograms").AutoMigrate(&model.MiniPrograms{})
+	err = db.Table("change_miniprograms").AutoMigrate(&model.MiniPrograms{})
 	if err != nil {
 		return nil, err
 	}
@@ -25,13 +30,14 @@ func InitDB() (*gorm.DB, error) {
 }
 
 // 创建一个新的 MiniPrograms 实例
-func NewMiniProgramsDAO(db *gorm.DB) *MiniProgramsDAO {
-	return &MiniProgramsDAO{db: db}
+func NewMiniProgramsDAO(db *gorm.DB, table string) *MiniProgramsDAO {
+	return &MiniProgramsDAO{db: db, table: table}
 }
 
+// 添加table变量，两个接口操作两个表
 func (d *MiniProgramsDAO) Find(name string) (*model.MiniPrograms, error) {
 	var miniPrograms model.MiniPrograms
-	err := d.db.Model(&model.MiniPrograms{}).First(&miniPrograms).Where("name = ?", name).Error
+	err := d.db.Table(d.table).Model(&model.MiniPrograms{}).Where("name= ?", name).First(&miniPrograms).Error
 	if err != nil {
 		return nil, err
 	}
@@ -39,5 +45,5 @@ func (d *MiniProgramsDAO) Find(name string) (*model.MiniPrograms, error) {
 }
 
 func (d *MiniProgramsDAO) Save(miniPrograms model.MiniPrograms) error {
-	return d.db.Model(&model.MiniPrograms{}).Where("name= ?", miniPrograms.Name).Save(&miniPrograms).Error
+	return d.db.Table(d.table).Model(&model.MiniPrograms{}).Where("name= ?", miniPrograms.Name).Save(&miniPrograms).Error
 }
