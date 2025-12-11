@@ -1,2 +1,4 @@
 username: "123"
 password : "1234567"
+data:
+  dsn: miniprograms:A7tQx9wPmZ@tcp(rm-bp1pkcz9y269h30fm5o.mysql.rds.aliyuncs.com:3306)/miniprograms?parseTime=true
